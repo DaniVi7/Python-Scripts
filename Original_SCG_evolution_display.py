@@ -21,6 +21,7 @@ parser.add_argument("-fr", "--Frequency", help="The period with which data point
 parser.add_argument("-SM", "--Smoothing", help="The number of point considered before and after each data point for smoothing", type=int)
 parser.add_argument("-NE", "--no_energy", help="The number of point considered before and after each data point for smoothing", type=bool)
 parser.add_argument('-FP', '--final_plot', help="Final plot of extracted average thetas on a single graph", type=bool)
+parser.add_argument('-ALL', '--Do_everything', help="Do everything", type=bool)
 
 args = parser.parse_args()
 
@@ -50,6 +51,10 @@ if args.final_plot: #Parsing arguments
 else:
     FINALP = False
 
+if args.Do_everything: #Parsing arguments
+    DOALL = True #string
+else:
+    DOALL = False
 
 ############################################################################################################################################################
 ############################################################################################################################################################
@@ -409,7 +414,7 @@ def Plot_final_graph():
 
 ##############################################################################
 
-def Read_Average_Plot_final_graph():
+def Read_Average_Plot():
 
     name_of_dirs = os.listdir()
     Theta_list = []
@@ -447,11 +452,16 @@ def Read_Average_Plot_final_graph():
             save_ds = ds
             break
 
-    dieci = Density_list.pop(ds)
+    dieci = Density_list.pop(save_ds)
     Density_list.append(dieci)
 
-    Theta_dieci = Theta_list.pop(ds)
+    Theta_dieci = Theta_list.pop(save_ds)
     Theta_list.append(Theta_dieci)
+
+    Dens_Theta_list = [list(unito) for unito in zip(Density_list, Theta_list)]
+    Dens_Theta_list = np.array(Dens_Theta_list)
+    ind = np.argsort(Dens_Theta_list[:,0])
+    Dens_Theta_list = Dens_Theta_list[ind]
 
     with open("Theta_vs_nR_recap.data", "w+") as TNR:
         #for counti, thetaj in enumerate(Theta_list):
@@ -460,14 +470,15 @@ def Read_Average_Plot_final_graph():
         TNR.write("nR    Theta \n")
 
         for counti, thetaj in enumerate(Theta_list):
-            TNR.write(str(Density_list[counti]) + "    "+ str(thetaj) + "\n")
+            #TNR.write(str(Dens_Theta_list[counti]) + "    "+ str(thetaj) + "\n")
+            TNR.write(str(Dens_Theta_list[counti,0]) + "    "+ str(Dens_Theta_list[counti,1]) + "\n")
 
         TNR.close()
 
     plt.figure()
     plt.ylabel("Theta")
     plt.xlabel("nR")
-    plt.plot(Density_list, Theta_list, color='r', linestyle="-", marker="o")
+    plt.plot(Dens_Theta_list[:,0], Dens_Theta_list[:,1], color='r', linestyle="-", marker="o")
     plt.savefig(("Theta_vs_nR.pdf"))
     plt.show()
     plt.close()
@@ -480,7 +491,10 @@ def Read_Average_Plot_final_graph():
 ######################           MAIN            #############################
 ##############################################################################
 
-if (FINALP == False):
+if (DOALL == True):
+    Read_Average_Plot()
+
+elif (FINALP == False):
     AllSteps, AllEn, AllNBonds, AllNColl, AllTheta = Read_evolution(FREQUENCY, Evolution_file)
     #Plot_data(AllSteps, AllEn, AllNBonds, AllNColl, AllTheta)
     if (NO_ENERGY == True):
