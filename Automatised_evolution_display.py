@@ -30,6 +30,7 @@ parser.add_argument("-SC_L", "--SC_L", help="Requires for plotting of results fo
 parser.add_argument("-ABN", "--All_Blob_Numbers", help="Requires for plotting of results for various SC_L", type=bool)
 parser.add_argument("-SF", "--Skip_Fraction", help="Requires for plotting of results for various SC_L", type=float)
 parser.add_argument("-PNP", "--Patch_No_Patch", help="Requires for plotting of results for various SC_L", type=bool)
+parser.add_argument("-JF", "--Just_fit", help="Requires for plotting of results for various SC_L", type=bool)
 
 args = parser.parse_args()
 
@@ -74,6 +75,11 @@ if args.Patch_No_Patch: #Parsing arguments
     PaNPa = True #string
 else:
     PaNPa = False
+
+if args.Just_fit: #Parsing arguments
+    FitOnly = True #string
+else:
+    FitOnly = False
 
 ############################################################################################################################################################
 ############################################################################################################################################################
@@ -762,6 +768,9 @@ def Plot_Patch_and_No_Patch3D():
     # Fug_Pack_target = []
     #
 
+    print("\nSaving final array to file! Now you can redo the fitting without all the rest of the process!\n")
+    np.save("Final_array.nump", FINAL_RESULT_LIST)
+    #New = np.load("Final_array.nump")
     Fit_final_arr(FINAL_RESULT_LIST)
     LOG_Fit_final_arr(FINAL_RESULT_LIST)
 
@@ -894,6 +903,30 @@ def LOG_Fit_final_arr(RESARRAY):
             #Note: [:,2] -> Packing   //  [:,1] -> Density   //  [:,0] -> X
 
             #Applying condition on density
+            to_fit_NP = to_fit_NP[to_fit_NP[:,1] < 5e-4]
+            to_fit_PA = to_fit_PA[to_fit_PA[:,1] < 5e-4]
+
+            if (0 in to_fit_NP) or (np.isnan(to_fit_NP).any()):
+                print("Anomaly found in to_fit_NP, " + curr_label)
+                print("to_fit_NP: ")
+                print(to_fit_NP)
+                to_fit_NP = to_fit_NP[to_fit_NP[:,1] != 0]
+                to_fit_NP = to_fit_NP[np.isnan(to_fit_NP[:,1]) != True]
+                print("\nto_fit_NP: ")
+                print(to_fit_NP)
+                print("\n")
+
+            if (0 in to_fit_PA) or (np.isnan(to_fit_PA).any()):
+                print("Anomaly found in to_fit_PA, " + curr_label)
+                print("to_fit_PA: ")
+                print(to_fit_PA)
+                to_fit_PA = to_fit_PA[to_fit_PA[:,1] != 0]
+                to_fit_PA = to_fit_PA[np.isnan(to_fit_PA[:,1]) != True]
+                print("\nto_fit_PA: ")
+                print(to_fit_PA)
+                print("\n")
+
+
             try:
                 to_fit_NP = np.log(to_fit_NP)
                 to_fit_PA = np.log(to_fit_PA)
@@ -912,6 +945,13 @@ def LOG_Fit_final_arr(RESARRAY):
 
             except Exception: #End of file or incomplete line
                 print("Error at " + curr_label)
+
+                print("\nto_fit_NP: ")
+                print(to_fit_NP)
+
+                print("\nto_fit_PA: ")
+                print(to_fit_PA)
+
                 continue
 
             print("Just fitted for: " + str(curr_label))
@@ -974,6 +1014,15 @@ def LOG_Fit_final_arr(RESARRAY):
     return
 
 ##############################################################################
+
+def JUST_FIT():
+    New = np.load("Final_array.nump.npy", allow_pickle=True)
+    Fit_final_arr(New)
+    LOG_Fit_final_arr(New)
+
+    return
+
+##############################################################################
 ##############################################################################
 ##############################################################################
 
@@ -990,6 +1039,8 @@ elif (SCAN_BN):
 elif (PaNPa):
     Plot_Patch_and_No_Patch3D()
 
+elif (FitOnly):
+    JUST_FIT()
 else:
     Plot_for_all_ZZ3D()
 
